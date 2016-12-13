@@ -3,18 +3,17 @@ using System.Collections;
 
 public class TerrainGenerator : MonoBehaviour {
     public Material mat;
-    public int vertexRows;
-    public int vertexColumns;
+    public int dimensions;
     public float meshWidth;
     public float meshHeight;
 
 	// Use this for initialization
 	void Start () {
-        for (int i = 0; i < 10; i++)
+        for (int i = 0; i < 1; i++)
         {
-            for (int j = 0; j < 10; j++)
+            for (int j = 0; j < 1; j++)
             {
-                GameObject q = CreatePlane(meshWidth, meshHeight, vertexRows, vertexColumns, i * vertexRows, j*vertexColumns);
+                GameObject q = CreatePlane(meshWidth, meshHeight, dimensions, dimensions, i * dimensions, j*dimensions);
                 q.transform.Rotate(new Vector3(180, 0, 0));
                 q.transform.Translate(new Vector3(i * meshWidth, 0, j * meshHeight));
             }
@@ -44,9 +43,7 @@ public class TerrainGenerator : MonoBehaviour {
         {
             for (int column = 0; column < adjColumns; column++)
             {
-                float amplitude = Mathf.PerlinNoise((2f * (column+offsetX)) / width, (2f * (row + offsetY)) / height);
-                amplitude = -ScaleRange(amplitude, 0, 1, 0, 100);
-                vertices[(row * adjColumns) + column] = new Vector3(column * ((width) / columns), amplitude, row * ((height) / rows));
+                vertices[(row * adjColumns) + column] = new Vector3(column * ((width) / columns), 0, row * ((height) / rows));
                 if (row < adjRows - 1 && column < adjColumns - 1)
                 {
                     triangles[triangleIndex++] = vertexIndex;
@@ -60,6 +57,7 @@ public class TerrainGenerator : MonoBehaviour {
                 vertexIndex++;
             }
         }
+        DiamondSquare(vertices);
         mf.mesh.vertices = vertices;
         mf.mesh.triangles = triangles;
         mf.mesh.RecalculateNormals();
@@ -71,11 +69,67 @@ public class TerrainGenerator : MonoBehaviour {
 
     }
 
-    public static float ScaleRange(float value, float oldMin, float oldMax, float newMin, float newMax)
+    public float ScaleRange(float value, float oldMin, float oldMax, float newMin, float newMax)
     {
         float oldVal = value / (oldMax - oldMin);
         float newVal = oldVal * (newMax - newMin);
         return newVal;
+    }
+
+    public Vector3[] DiamondSquare(Vector3[] plane)
+    {
+        float scale = -1000;
+        float sideLength = Mathf.Sqrt(plane.Length);
+        if (sideLength % 1 != 0)
+        {
+            Debug.Log("dimensions should be 2,4,8,16...");
+            return null;
+        }
+        float iterations = Mathf.Log(sideLength-1, 2);
+        if (iterations % 1 != 0)
+        {
+            Debug.Log("dimensions should be 2,4,8,16...");
+            return null;
+        }
+
+
+        // Start with 4 random values at the corners
+        plane[0].y = Random.value * scale;
+        plane[(int)sideLength - 1].y = Random.value * scale;
+        plane[plane.Length - (int)sideLength].y = Random.value * scale;
+        plane[plane.Length - 1].y = Random.value * scale;
+
+
+        // start with the full matrix
+        int minR = 0;
+        int maxR = ((int)sideLength - 1);
+        for (int i = 0; i < iterations; i++)
+        {
+            for (int j = 0; j < Mathf.Pow(4,i); j++)
+            {
+                // Sample diamond
+                // get the 4 corners
+                float a = plane[minR].y;
+                float b = plane[maxR].y;
+                float c = plane[maxR*(int)sideLength].y;
+                float d = plane[(maxR * (int)sideLength) + maxR].y;
+                // get the average
+                float avg = (a + b + c + d) / 4;
+                // set the center
+                plane[((maxR * (int)sideLength) + maxR)/2].y = avg + ((Random.value - 0.5f) * scale);
+
+                // Sample square
+                // set the 4 points between the corners
+                plane[maxR / 2].y = ((a + b) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
+                plane[(maxR * (int)sideLength) / 2].y = ((a + c) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
+                plane[((maxR * (int)sideLength) + ((maxR * (int)sideLength) + maxR)) / 2].y = ((c + d) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
+                plane[(maxR + ((maxR * (int)sideLength) + maxR)) / 2].y = ((d + b) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
+
+                // increment minR and maxR
+            }
+            // reset minR and maxR
+        }
+        return plane;
     }
 
 }
