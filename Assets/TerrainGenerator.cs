@@ -6,26 +6,22 @@ public class TerrainGenerator : MonoBehaviour {
     public int dimensions;
     public float meshWidth;
     public float meshHeight;
+    public float amplitude;
+    public float smoothness;
 
-	// Use this for initialization
-	void Start () {
-        for (int i = 0; i < 1; i++)
-        {
-            for (int j = 0; j < 1; j++)
-            {
-                GameObject q = CreatePlane(meshWidth, meshHeight, dimensions, dimensions, i * dimensions, j*dimensions);
-                q.transform.Rotate(new Vector3(180, 0, 0));
-                q.transform.Translate(new Vector3(i * meshWidth, 0, j * meshHeight));
-            }
-        }
+
+    // Use this for initialization
+    void Start() {
+        GameObject q = CreatePlane(meshWidth, meshHeight, dimensions, dimensions);
+        q.transform.Rotate(new Vector3(180, 0, 0));
     }
 
     // Update is called once per frame
-    void Update () {
-	
-	}
+    void Update() {
 
-    public GameObject CreatePlane(float width, float height, int rows, int columns, float offsetX, float offsetY)
+    }
+
+    public GameObject CreatePlane(float width, float height, int rows, int columns)
     {
         GameObject go = new GameObject();
         go.AddComponent<MeshFilter>();
@@ -76,22 +72,23 @@ public class TerrainGenerator : MonoBehaviour {
         return newVal;
     }
 
-    public Vector3[] DiamondSquare(Vector3[] plane)
+    public void DiamondSquare(Vector3[] plane)
     {
-        float scale = -1000;
         float sideLength = Mathf.Sqrt(plane.Length);
         if (sideLength % 1 != 0)
         {
             Debug.Log("dimensions should be 2,4,8,16...");
-            return null;
+            return;
         }
-        float iterations = Mathf.Log(sideLength-1, 2);
+        float iterations = Mathf.Log(sideLength - 1, 2);
         if (iterations % 1 != 0)
         {
             Debug.Log("dimensions should be 2,4,8,16...");
-            return null;
+            return;
         }
 
+        // Set the scale of the randomly generated offsets
+        float scale = amplitude * -0.3f;
 
         // Start with 4 random values at the corners
         plane[0].y = Random.value * scale;
@@ -99,37 +96,51 @@ public class TerrainGenerator : MonoBehaviour {
         plane[plane.Length - (int)sideLength].y = Random.value * scale;
         plane[plane.Length - 1].y = Random.value * scale;
 
-
-        // start with the full matrix
-        int minR = 0;
-        int maxR = ((int)sideLength - 1);
         for (int i = 0; i < iterations; i++)
         {
-            for (int j = 0; j < Mathf.Pow(4,i); j++)
+            // size the sampled matrix
+            int samplingColumns = (int)Mathf.Pow(2, i);
+            int minR = 0;
+            int maxR = (((int)sideLength - 1) / samplingColumns);
+            // distance between sampling corners
+            int dist = maxR;
+            float iterScale = scale / ((i * smoothness) + 1);
+            for (int j = 0; j < Mathf.Pow(4, i); j++)
             {
                 // Sample diamond
                 // get the 4 corners
                 float a = plane[minR].y;
                 float b = plane[maxR].y;
-                float c = plane[maxR*(int)sideLength].y;
-                float d = plane[(maxR * (int)sideLength) + maxR].y;
+                float c = plane[minR + (dist * (int)sideLength)].y;
+                float d = plane[maxR + (dist * (int)sideLength)].y;
                 // get the average
                 float avg = (a + b + c + d) / 4;
                 // set the center
-                plane[((maxR * (int)sideLength) + maxR)/2].y = avg + ((Random.value - 0.5f) * scale);
+                plane[(minR + (maxR + (dist * (int)sideLength))) / 2].y = avg + ((Random.value - 0.5f) * iterScale);
 
                 // Sample square
                 // set the 4 points between the corners
-                plane[maxR / 2].y = ((a + b) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
-                plane[(maxR * (int)sideLength) / 2].y = ((a + c) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
-                plane[((maxR * (int)sideLength) + ((maxR * (int)sideLength) + maxR)) / 2].y = ((c + d) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
-                plane[(maxR + ((maxR * (int)sideLength) + maxR)) / 2].y = ((d + b) / 2) + ((Random.value - 0.5f) * (scale * 0.5f));
+
+                plane[(minR + maxR) / 2].y = ((a + b) / 2) + ((Random.value - 0.5f) * iterScale);
+                plane[(minR + (minR + (dist * (int)sideLength))) / 2].y = ((a + c) / 2) + ((Random.value - 0.5f) * iterScale);
+                plane[((minR + (dist * (int)sideLength)) + (maxR + (dist * (int)sideLength))) / 2].y = ((c + d) / 2) + ((Random.value - 0.5f) * iterScale);
+                plane[((maxR + (dist * (int)sideLength)) + maxR) / 2].y = ((d + b) / 2) + ((Random.value - 0.5f) * iterScale);
 
                 // increment minR and maxR
+                if (maxR % sideLength == sideLength - 1)
+                {
+                    minR = (((j + 1) / (int)Mathf.Pow(2, i))) * (dist * (int)sideLength);
+                    maxR = minR + dist;
+                }
+                else
+                {
+                    minR = maxR;
+                    maxR += dist;
+                }
             }
-            // reset minR and maxR
         }
-        return plane;
     }
+    
+
 
 }
