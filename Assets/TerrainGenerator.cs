@@ -2,24 +2,36 @@
 using System.Collections;
 
 public class TerrainGenerator : MonoBehaviour {
+    public Material mat;
+    public int vertexRows;
+    public int vertexColumns;
+    public float meshWidth;
+    public float meshHeight;
 
 	// Use this for initialization
 	void Start () {
-        GameObject p = CreatePlane(100f, 100f, 50, 50);
-        p.transform.Rotate(new Vector3(180,0,0));
+        for (int i = 0; i < 10; i++)
+        {
+            for (int j = 0; j < 10; j++)
+            {
+                GameObject q = CreatePlane(meshWidth, meshHeight, vertexRows, vertexColumns, i * vertexRows, j*vertexColumns);
+                q.transform.Rotate(new Vector3(180, 0, 0));
+                q.transform.Translate(new Vector3(i * meshWidth, 0, j * meshHeight));
+            }
+        }
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update () {
 	
 	}
 
-    public static GameObject CreatePlane(float width, float height, int rows, int columns)
+    public GameObject CreatePlane(float width, float height, int rows, int columns, float offsetX, float offsetY)
     {
         GameObject go = new GameObject();
         go.AddComponent<MeshFilter>();
         MeshFilter mf = go.GetComponent<MeshFilter>();
-        go.AddComponent<MeshRenderer>();
+        MeshRenderer mr = go.AddComponent<MeshRenderer>();
 
 
         int adjRows = rows + 1;
@@ -32,9 +44,9 @@ public class TerrainGenerator : MonoBehaviour {
         {
             for (int column = 0; column < adjColumns; column++)
             {
-                float amplitude = Mathf.PerlinNoise(10 * column / width, 10 * row / height);
-                amplitude = -ScaleRange(amplitude, 0, 1, 0, 20);
-                vertices[(row * adjColumns) + column] = new Vector3(column * (width / columns), amplitude, row * (height / rows));
+                float amplitude = Mathf.PerlinNoise((2f * (column+offsetX)) / width, (2f * (row + offsetY)) / height);
+                amplitude = -ScaleRange(amplitude, 0, 1, 0, 100);
+                vertices[(row * adjColumns) + column] = new Vector3(column * ((width) / columns), amplitude, row * ((height) / rows));
                 if (row < adjRows - 1 && column < adjColumns - 1)
                 {
                     triangles[triangleIndex++] = vertexIndex;
@@ -52,6 +64,8 @@ public class TerrainGenerator : MonoBehaviour {
         mf.mesh.triangles = triangles;
         mf.mesh.RecalculateNormals();
         mf.mesh.RecalculateBounds();
+        mr.material = mat;
+
         go.AddComponent<MeshCollider>();
         return go;
 
