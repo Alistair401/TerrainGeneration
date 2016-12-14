@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
 public class TerrainGenerator : MonoBehaviour {
     public Material mat;
@@ -13,7 +14,6 @@ public class TerrainGenerator : MonoBehaviour {
     // Use this for initialization
     void Start() {
         GameObject q = CreatePlane(meshWidth, meshHeight, dimensions, dimensions);
-        q.transform.Rotate(new Vector3(180, 0, 0));
     }
 
     // Update is called once per frame
@@ -43,11 +43,12 @@ public class TerrainGenerator : MonoBehaviour {
                 if (row < adjRows - 1 && column < adjColumns - 1)
                 {
                     triangles[triangleIndex++] = vertexIndex;
-                    triangles[triangleIndex++] = vertexIndex + adjColumns + 1;
                     triangles[triangleIndex++] = vertexIndex + adjColumns;
-
                     triangles[triangleIndex++] = vertexIndex + adjColumns + 1;
+
+
                     triangles[triangleIndex++] = vertexIndex;
+                    triangles[triangleIndex++] = vertexIndex + adjColumns + 1;
                     triangles[triangleIndex++] = vertexIndex + 1;
                 }
                 vertexIndex++;
@@ -55,27 +56,37 @@ public class TerrainGenerator : MonoBehaviour {
         }
         DiamondSquare(vertices);
 
-        // Generate UVs
-        Vector2[] uvs = new Vector2[vertices.Length];
-        for (int v = 0; v < adjRows; v++)
-        {
-            for (int u = 0; u < adjColumns; u++)
-            {
-                uvs[u + (v * adjColumns)] = new Vector2((float)u / (adjColumns - 1), (float)v / (adjRows - 1));
-            }
-        }
+        Vector2[] uvs = GenerateUV(vertices);
+
+        Texture2D tex = GenerateTex(vertices, 1);
 
         mf.mesh.vertices = vertices;
-        mf.mesh.uv = uvs;
         mf.mesh.triangles = triangles;
+        mf.mesh.uv = uvs;
         mf.mesh.RecalculateNormals();
         mf.mesh.RecalculateBounds();
-        mf.mesh.Optimize();
+        mat.mainTexture = tex;
         mr.material = mat;
-
         go.AddComponent<MeshCollider>();
         return go;
 
+    }
+
+    private Texture2D GenerateTex(Vector3[] vertices,int resolution)
+    {
+        int sideLength = (int)Mathf.Sqrt(vertices.Length);
+        Texture2D t = new Texture2D((sideLength - 1) * resolution, (sideLength - 1) * resolution);
+        for (int y = 0; y < sideLength-1; y++)
+        {
+            for (int x = 0; x < sideLength-1; x++)
+            {
+                Color c = new Color(UnityEngine.Random.Range(0f,1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
+                t.SetPixel(x, y, c);
+            }
+        }
+        t.filterMode = FilterMode.Point;
+        t.Apply();
+        return t;
     }
 
     public float ScaleRange(float value, float oldMin, float oldMax, float newMin, float newMax)
@@ -83,6 +94,21 @@ public class TerrainGenerator : MonoBehaviour {
         float oldVal = value / (oldMax - oldMin);
         float newVal = oldVal * (newMax - newMin);
         return newVal;
+    }
+
+    public Vector2[] GenerateUV(Vector3[] plane)
+    {
+        Vector2[] uvs = new Vector2[plane.Length];
+        int sideLength = (int)Mathf.Sqrt(plane.Length);
+        for (int v = 0; v < sideLength; v++)
+        {
+            for (int u = 0; u < sideLength; u++)
+            {
+                uvs[u + (v * sideLength)] = new Vector2((float)u / (sideLength - 1), (float)v / (sideLength - 1));
+            }
+
+        }
+        return uvs;
     }
 
     public void DiamondSquare(Vector3[] plane)
@@ -101,13 +127,13 @@ public class TerrainGenerator : MonoBehaviour {
         }
 
         // Set the scale of the randomly generated offsets
-        float scale = amplitude * -0.3f;
+        float scale = amplitude;
 
         // Start with 4 random values at the corners
-        plane[0].y = Random.value * scale;
-        plane[(int)sideLength - 1].y = Random.value * scale;
-        plane[plane.Length - (int)sideLength].y = Random.value * scale;
-        plane[plane.Length - 1].y = Random.value * scale;
+        plane[0].y = UnityEngine.Random.value * scale;
+        plane[(int)sideLength - 1].y = UnityEngine.Random.value * scale;
+        plane[plane.Length - (int)sideLength].y = UnityEngine.Random.value * scale;
+        plane[plane.Length - 1].y = UnityEngine.Random.value * scale;
 
         for (int i = 0; i < iterations; i++)
         {
@@ -129,15 +155,15 @@ public class TerrainGenerator : MonoBehaviour {
                 // get the average
                 float avg = (a + b + c + d) / 4;
                 // set the center
-                plane[(minR + (maxR + (dist * (int)sideLength))) / 2].y = avg + ((Random.value - 0.5f) * iterScale);
+                plane[(minR + (maxR + (dist * (int)sideLength))) / 2].y = avg + ((UnityEngine.Random.value - 0.5f) * iterScale);
 
                 // Sample square
                 // set the 4 points between the corners
 
-                plane[(minR + maxR) / 2].y = ((a + b) / 2) + ((Random.value - 0.5f) * iterScale);
-                plane[(minR + (minR + (dist * (int)sideLength))) / 2].y = ((a + c) / 2) + ((Random.value - 0.5f) * iterScale);
-                plane[((minR + (dist * (int)sideLength)) + (maxR + (dist * (int)sideLength))) / 2].y = ((c + d) / 2) + ((Random.value - 0.5f) * iterScale);
-                plane[((maxR + (dist * (int)sideLength)) + maxR) / 2].y = ((d + b) / 2) + ((Random.value - 0.5f) * iterScale);
+                plane[(minR + maxR) / 2].y = ((a + b) / 2) + ((UnityEngine.Random.value - 0.5f) * iterScale);
+                plane[(minR + (minR + (dist * (int)sideLength))) / 2].y = ((a + c) / 2) + ((UnityEngine.Random.value - 0.5f) * iterScale);
+                plane[((minR + (dist * (int)sideLength)) + (maxR + (dist * (int)sideLength))) / 2].y = ((c + d) / 2) + ((UnityEngine.Random.value - 0.5f) * iterScale);
+                plane[((maxR + (dist * (int)sideLength)) + maxR) / 2].y = ((d + b) / 2) + ((UnityEngine.Random.value - 0.5f) * iterScale);
 
                 // increment minR and maxR
                 if (maxR % sideLength == sideLength - 1)
