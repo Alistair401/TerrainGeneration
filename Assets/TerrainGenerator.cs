@@ -54,10 +54,23 @@ public class TerrainGenerator : MonoBehaviour {
             }
         }
         DiamondSquare(vertices);
+
+        // Generate UVs
+        Vector2[] uvs = new Vector2[vertices.Length];
+        for (int v = 0; v < adjRows; v++)
+        {
+            for (int u = 0; u < adjColumns; u++)
+            {
+                uvs[u + (v * adjColumns)] = new Vector2((float)u / (adjColumns - 1), (float)v / (adjRows - 1));
+            }
+        }
+
         mf.mesh.vertices = vertices;
+        mf.mesh.uv = uvs;
         mf.mesh.triangles = triangles;
         mf.mesh.RecalculateNormals();
         mf.mesh.RecalculateBounds();
+        mf.mesh.Optimize();
         mr.material = mat;
 
         go.AddComponent<MeshCollider>();
