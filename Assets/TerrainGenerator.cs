@@ -3,19 +3,19 @@ using System.Collections;
 using System;
 
 public class TerrainGenerator : MonoBehaviour {
-    public Material mat;
-    public int dimensions;
-    public float meshWidth;
-    public float meshHeight;
-    public float amplitude;
-    public float smoothness;
-    public int texRes;
-    public Texture2D tiles;
+    public Material Mat;
+    public int Dimensions;
+    public float MeshWidth;
+    public float MeshHeight;
+    public float Amplitude;
+    public float Smoothness;
+    public int TexRes;
+    public Texture2D Tiles;
 
 
     // Use this for initialization
     void Start() {
-        GameObject q = CreatePlane(meshWidth, meshHeight, dimensions, dimensions);
+        GameObject q = CreatePlane(MeshWidth, MeshHeight, Dimensions, Dimensions);
     }
 
     // Update is called once per frame
@@ -60,15 +60,15 @@ public class TerrainGenerator : MonoBehaviour {
 
         Vector2[] uvs = GenerateUV(vertices);
 
-        Texture2D tex = GenerateTex(vertices, texRes);
+        Texture2D tex = GenerateTex(vertices, TexRes);
 
         mf.mesh.vertices = vertices;
         mf.mesh.triangles = triangles;
         mf.mesh.uv = uvs;
         mf.mesh.RecalculateNormals();
         mf.mesh.RecalculateBounds();
-        mat.mainTexture = tex;
-        mr.material = mat;
+        Mat.mainTexture = tex;
+        mr.material = Mat;
         go.AddComponent<MeshCollider>();
         return go;
 
@@ -88,7 +88,7 @@ public class TerrainGenerator : MonoBehaviour {
                 float c = vertices[(y * sideLength) + x + sideLength].y;
                 float d = vertices[(y * sideLength) + x + sideLength + 1].y;
 
-                float avg = ((a + b + c + d) / 4)/amplitude;
+                float avg = ((a + b + c + d) / 4)/Amplitude;
 
 
                 if (avg > 0.5)
@@ -100,7 +100,7 @@ public class TerrainGenerator : MonoBehaviour {
                     tileIndex = 2;
                 }
 
-                Color[] tileColor = tiles.GetPixels(tileIndex * 64, 0, resolution, resolution); 
+                Color[] tileColor = Tiles.GetPixels(tileIndex * 64, 0, resolution, resolution);
                 t.SetPixels(x*resolution,y*resolution,resolution,resolution, tileColor);
             }
         }
@@ -147,7 +147,7 @@ public class TerrainGenerator : MonoBehaviour {
         }
 
         // Set the scale of the randomly generated offsets
-        float scale = amplitude;
+        float scale = Amplitude;
 
         // Start with 4 random values at the corners
         plane[0].y = UnityEngine.Random.value * scale;
@@ -163,7 +163,7 @@ public class TerrainGenerator : MonoBehaviour {
             int maxR = (((int)sideLength - 1) / samplingColumns);
             // distance between sampling corners
             int dist = maxR;
-            float iterScale = scale / ((i * smoothness) + 1);
+            float iterScale = scale / ((i * Smoothness) + 1);
             for (int j = 0; j < Mathf.Pow(4, i); j++)
             {
                 // Sample diamond
