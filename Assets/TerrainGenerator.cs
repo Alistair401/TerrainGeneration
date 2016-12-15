@@ -9,6 +9,8 @@ public class TerrainGenerator : MonoBehaviour {
     public float meshHeight;
     public float amplitude;
     public float smoothness;
+    public int texRes;
+    public Texture2D tiles;
 
 
     // Use this for initialization
@@ -58,7 +60,7 @@ public class TerrainGenerator : MonoBehaviour {
 
         Vector2[] uvs = GenerateUV(vertices);
 
-        Texture2D tex = GenerateTex(vertices, 1);
+        Texture2D tex = GenerateTex(vertices, texRes);
 
         mf.mesh.vertices = vertices;
         mf.mesh.triangles = triangles;
@@ -76,12 +78,30 @@ public class TerrainGenerator : MonoBehaviour {
     {
         int sideLength = (int)Mathf.Sqrt(vertices.Length);
         Texture2D t = new Texture2D((sideLength - 1) * resolution, (sideLength - 1) * resolution);
-        for (int y = 0; y < sideLength-1; y++)
+        for (int y = 0; y < (sideLength-1); y++)
         {
-            for (int x = 0; x < sideLength-1; x++)
+            for (int x = 0; x < (sideLength-1); x++)
             {
-                Color c = new Color(UnityEngine.Random.Range(0f,1f), UnityEngine.Random.Range(0f, 1f), UnityEngine.Random.Range(0f, 1f));
-                t.SetPixel(x, y, c);
+                int tileIndex = 1;
+                float a = vertices[(y * sideLength) + x].y;
+                float b = vertices[(y * sideLength) + x + 1].y;
+                float c = vertices[(y * sideLength) + x + sideLength].y;
+                float d = vertices[(y * sideLength) + x + sideLength + 1].y;
+
+                float avg = ((a + b + c + d) / 4)/amplitude;
+
+
+                if (avg > 0.5)
+                {
+                    tileIndex = 0;
+                }
+                else if (avg < 0.2)
+                {
+                    tileIndex = 2;
+                }
+
+                Color[] tileColor = tiles.GetPixels(tileIndex * 64, 0, resolution, resolution); 
+                t.SetPixels(x*resolution,y*resolution,resolution,resolution, tileColor);
             }
         }
         t.filterMode = FilterMode.Point;
