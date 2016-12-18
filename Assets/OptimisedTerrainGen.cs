@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
+using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using UnityEngine.EventSystems;
 
@@ -23,7 +24,7 @@ public class OptimisedTerrainGen : MonoBehaviour
         Vector3[] vertices = PlaneGen(triColumns, size);
         int[] triangles = TriGen(vertices);
         vertices = DiamondSquareGen(vertices);
-        //Vector2[] uvs = UVGen(vertices);
+        Vector2[] uvs = UVGen(vertices);
 
         GameObject go = new GameObject();
         MeshFilter mf = go.AddComponent<MeshFilter>();
@@ -31,7 +32,7 @@ public class OptimisedTerrainGen : MonoBehaviour
 
         mf.mesh.vertices = vertices;
         mf.mesh.triangles = triangles;
-        //mf.mesh.uv = uvs;
+        mf.mesh.uv = uvs;
         mf.mesh.RecalculateNormals();
         mf.mesh.RecalculateBounds();
         go.AddComponent<MeshCollider>();
@@ -95,7 +96,35 @@ public class OptimisedTerrainGen : MonoBehaviour
 
     private Vector2[] UVGen(Vector3[] vertices)
     {
-        throw new System.NotImplementedException();
+        Vector2[] uvs = new Vector2[vertices.Length];
+        int matrixDimensions = (int) Mathf.Sqrt(vertices.Length);
+        for (int row = 0; row < matrixDimensions; row += 2)
+        {
+            for (int column = 0; column < matrixDimensions; column += 2)
+            {
+                int ul = row * matrixDimensions + column;
+                int ur = row * matrixDimensions + column + 1;
+                int bl = (row + 1) * matrixDimensions + column;
+                int br = (row + 1) * matrixDimensions + column + 1;
+
+                float avg = (vertices[ul].y + vertices[ur].y + vertices[bl].y + vertices[br].y) / 4f/ Amplitude;
+                int offset = 1;
+                if (avg > 0.5)
+                {
+                    offset = 0;
+                }
+                else if (avg < 0.2)
+                {
+                    offset = 2;
+                }
+
+                uvs[ul] = new Vector2(offset*0.0625f, 1);
+                uvs[ur] = new Vector2((offset+1)*0.0625f, 1);
+                uvs[bl] = new Vector2(offset*0.0625f, 0);
+                uvs[br] = new Vector2((offset+1)*0.0625f, 0);
+            }
+        }
+        return uvs;
     }
 
     private Vector3[] DiamondSquareGen(Vector3[] vertices)
@@ -118,13 +147,13 @@ public class OptimisedTerrainGen : MonoBehaviour
         plane[0].y = UnityEngine.Random.value * Amplitude; // Top left
         plane[matrixDimensions - 1].y = UnityEngine.Random.value * Amplitude; // Top right
         plane[(matrixDimensions - 1) * matrixDimensions].y = UnityEngine.Random.value * Amplitude; // Bottom left
-        plane[(matrixDimensions * matrixDimensions) - 1].y = UnityEngine.Random.value * Amplitude; // Bottom right
+        plane[matrixDimensions * matrixDimensions - 1].y = UnityEngine.Random.value * Amplitude; // Bottom right
 
         // For each iteration
         for (int i = 0; i < iterations; i++)
         {
             // Set the smoothness of the current iteration
-            float iterScale = Amplitude / ((i * Smoothness) + 1);
+            float iterScale = Amplitude / (i * Smoothness + 1);
 
             // Size the sampling matrix
             int sampleColumns = (int) Mathf.Pow(2, i);
@@ -134,18 +163,18 @@ public class OptimisedTerrainGen : MonoBehaviour
             // for each sub iteration (0 to 4^iteration)
             for (int j = 0; j < (int) Mathf.Pow(4, i); j++)
             {
-                int maxSampleCorner = (minSampleCorner + sampleDimensions - 1) +
-                                      ((sampleDimensions - 1) * matrixDimensions);
+                int maxSampleCorner = minSampleCorner + sampleDimensions - 1 +
+                                      (sampleDimensions - 1) * matrixDimensions;
 
                 // Sample the diamond
                 float ul = plane[minSampleCorner].y;
                 float ur = plane[minSampleCorner + sampleDimensions - 1].y;
-                float bl = plane[minSampleCorner + ((sampleDimensions - 1) * matrixDimensions)].y;
-                float br = plane[minSampleCorner + sampleDimensions - 1 + ((sampleDimensions - 1) * matrixDimensions)].y;
+                float bl = plane[minSampleCorner + (sampleDimensions - 1) * matrixDimensions].y;
+                float br = plane[minSampleCorner + sampleDimensions - 1 + (sampleDimensions - 1) * matrixDimensions].y;
                 float avg = (ul + ur + bl + br) / 4;
 
                 // Set the center 4 vertices (4x duplicates included)
-                float randVal = avg + ((UnityEngine.Random.value - 0.5f) * iterScale);
+                float randVal = avg + (UnityEngine.Random.value - 0.5f) * iterScale;
                 int[] cent =
                     GetDuplicateVertices(
                         minSampleCorner + sampleDimensions / 2 + (sampleDimensions / 2 - 1) * matrixDimensions - 1,
@@ -160,13 +189,11 @@ public class OptimisedTerrainGen : MonoBehaviour
                 // Sample the square
                 // Set the 16 midpoint vertices (4x duplicates included)
 
-                float val = 0;
-
                 // Top midpoints
                 randVal = UnityEngine.Random.value;
                 int[] midN = GetDuplicateVertices((2 * minSampleCorner + sampleDimensions) / 2 - 1 - matrixDimensions,
                     matrixDimensions);
-                val = (ul + ur) / 2 + (randVal - 0.5f) * iterScale;
+                float val = (ul + ur) / 2 + (randVal - 0.5f) * iterScale;
                 if (row != 0)
                 {
                     plane[midN[0]].y = val;
