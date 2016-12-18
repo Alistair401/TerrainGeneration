@@ -1,9 +1,6 @@
 ﻿using System;
 using UnityEngine;
-using System.Collections;
-using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
-using UnityEngine.EventSystems;
+using Random = UnityEngine.Random;
 
 public class OptimisedTerrainGen : MonoBehaviour
 {
@@ -33,7 +30,7 @@ public class OptimisedTerrainGen : MonoBehaviour
         mf.mesh.vertices = vertices;
         mf.mesh.triangles = triangles;
         mf.mesh.uv = uvs;
-        mf.mesh.RecalculateNormals();
+        mf.mesh.RecalculateNormals(60f);
         mf.mesh.RecalculateBounds();
         go.AddComponent<MeshCollider>();
         mr.material = MeshMaterial;
@@ -144,10 +141,10 @@ public class OptimisedTerrainGen : MonoBehaviour
         }
 
         // Start with 4 random values at the corners
-        plane[0].y = UnityEngine.Random.value * Amplitude; // Top left
-        plane[matrixDimensions - 1].y = UnityEngine.Random.value * Amplitude; // Top right
-        plane[(matrixDimensions - 1) * matrixDimensions].y = UnityEngine.Random.value * Amplitude; // Bottom left
-        plane[matrixDimensions * matrixDimensions - 1].y = UnityEngine.Random.value * Amplitude; // Bottom right
+        plane[0].y = Random.value * Amplitude; // Top left
+        plane[matrixDimensions - 1].y = Random.value * Amplitude; // Top right
+        plane[(matrixDimensions - 1) * matrixDimensions].y = Random.value * Amplitude; // Bottom left
+        plane[matrixDimensions * matrixDimensions - 1].y = Random.value * Amplitude; // Bottom right
 
         // For each iteration
         for (int i = 0; i < iterations; i++)
@@ -174,7 +171,7 @@ public class OptimisedTerrainGen : MonoBehaviour
                 float avg = (ul + ur + bl + br) / 4;
 
                 // Set the center 4 vertices (4x duplicates included)
-                float randVal = avg + (UnityEngine.Random.value - 0.5f) * iterScale;
+                float randVal = avg + (Random.value - 0.5f) * iterScale;
                 int[] cent =
                     GetDuplicateVertices(
                         minSampleCorner + sampleDimensions / 2 + (sampleDimensions / 2 - 1) * matrixDimensions - 1,
@@ -190,7 +187,7 @@ public class OptimisedTerrainGen : MonoBehaviour
                 // Set the 16 midpoint vertices (4x duplicates included)
 
                 // Top midpoints
-                randVal = UnityEngine.Random.value;
+                randVal = Random.value;
                 int[] midN = GetDuplicateVertices((2 * minSampleCorner + sampleDimensions) / 2 - 1 - matrixDimensions,
                     matrixDimensions);
                 float val = (ul + ur) / 2 + (randVal - 0.5f) * iterScale;
@@ -204,7 +201,7 @@ public class OptimisedTerrainGen : MonoBehaviour
 
 
                 // Right midpoints
-                randVal = UnityEngine.Random.value;
+                randVal = Random.value;
                 int[] midE =
                     GetDuplicateVertices(
                         minSampleCorner + sampleDimensions - 1 + (sampleDimensions / 2 - 1) * matrixDimensions,
@@ -220,7 +217,7 @@ public class OptimisedTerrainGen : MonoBehaviour
 
 
                 // Bottom midpoints
-                randVal = UnityEngine.Random.value;
+                randVal = Random.value;
                 int[] midS = GetDuplicateVertices(maxSampleCorner - sampleDimensions / 2, matrixDimensions);
                 val = (bl + br) / 2 + (randVal - 0.5f) * iterScale;
                 if (maxSampleCorner < matrixDimensions * (matrixDimensions - 1))
@@ -232,7 +229,7 @@ public class OptimisedTerrainGen : MonoBehaviour
                 plane[midS[1]].y = val;
 
                 // Left midpoints
-                randVal = UnityEngine.Random.value;
+                randVal = Random.value;
                 int[] midW = GetDuplicateVertices(minSampleCorner + (sampleDimensions / 2 - 1) * matrixDimensions - 1,
                     matrixDimensions);
                 val = (ul + bl) / 2 + (randVal - 0.5f) * iterScale;
