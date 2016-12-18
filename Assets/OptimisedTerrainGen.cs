@@ -21,6 +21,7 @@ public class OptimisedTerrainGen : MonoBehaviour
         Vector3[] vertices = PlaneGen(triColumns, size);
         int[] triangles = TriGen(vertices);
         vertices = DiamondSquareGen(vertices);
+        vertices = CorrectSeaLevel(vertices);
         Vector2[] uvs = UVGen(vertices);
 
         GameObject go = new GameObject();
@@ -35,6 +36,19 @@ public class OptimisedTerrainGen : MonoBehaviour
         go.AddComponent<MeshCollider>();
         mr.material = MeshMaterial;
         return go;
+    }
+
+    private Vector3[] CorrectSeaLevel(Vector3[] vertices)
+    {
+        Vector3[] plane = vertices.Clone() as Vector3[];
+        for (int i = 0; i < plane.Length; i++)
+        {
+            if (plane[i].y < 0)
+            {
+                plane[i].y = 0;
+            }
+        }
+        return plane;
     }
 
     private Vector3[] PlaneGen(int triColumns, float size)
@@ -104,21 +118,14 @@ public class OptimisedTerrainGen : MonoBehaviour
                 int bl = (row + 1) * matrixDimensions + column;
                 int br = (row + 1) * matrixDimensions + column + 1;
 
-                float avg = (vertices[ul].y + vertices[ur].y + vertices[bl].y + vertices[br].y) / 4f/ Amplitude;
-                int offset = 1;
-                if (avg > 0.5)
-                {
-                    offset = 0;
-                }
-                else if (avg < 0.2)
-                {
-                    offset = 2;
-                }
+                float avg = (vertices[ul].y + vertices[ur].y + vertices[bl].y + vertices[br].y) / 4f / Amplitude;
+                int offset = 10 - Mathf.RoundToInt(avg * 10) -1;
 
-                uvs[ul] = new Vector2(offset*0.0625f, 1);
-                uvs[ur] = new Vector2((offset+1)*0.0625f, 1);
-                uvs[bl] = new Vector2(offset*0.0625f, 0);
-                uvs[br] = new Vector2((offset+1)*0.0625f, 0);
+
+                uvs[ul] = new Vector2(offset * 0.0625f, 1);
+                uvs[ur] = new Vector2((offset + 1) * 0.0625f - 1f / 1024f, 1);
+                uvs[bl] = new Vector2(offset * 0.0625f, 0);
+                uvs[br] = new Vector2((offset + 1) * 0.0625f - 1f / 1024f, 0);
             }
         }
         return uvs;
