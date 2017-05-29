@@ -21,8 +21,7 @@ public class OptimisedTerrainGen : MonoBehaviour
         Vector3[] vertices = PlaneGen(triColumns, size);
         int[] triangles = TriGen(vertices);
         vertices = DiamondSquareGen(vertices);
-        vertices = CorrectSeaLevel(vertices);
-        Vector2[] uvs = UVGen(vertices);
+        Vector2[] uvs = UvGen(vertices);
 
         GameObject go = new GameObject();
         MeshFilter mf = go.AddComponent<MeshFilter>();
@@ -38,18 +37,6 @@ public class OptimisedTerrainGen : MonoBehaviour
         return go;
     }
 
-    private Vector3[] CorrectSeaLevel(Vector3[] vertices)
-    {
-        Vector3[] plane = vertices.Clone() as Vector3[];
-        for (int i = 0; i < plane.Length; i++)
-        {
-            if (plane[i].y < 0)
-            {
-                plane[i].y = 0;
-            }
-        }
-        return plane;
-    }
 
     private Vector3[] PlaneGen(int triColumns, float size)
     {
@@ -105,7 +92,7 @@ public class OptimisedTerrainGen : MonoBehaviour
         return triangles;
     }
 
-    private Vector2[] UVGen(Vector3[] vertices)
+    private Vector2[] UvGen(Vector3[] vertices)
     {
         Vector2[] uvs = new Vector2[vertices.Length];
         int matrixDimensions = (int) Mathf.Sqrt(vertices.Length);
